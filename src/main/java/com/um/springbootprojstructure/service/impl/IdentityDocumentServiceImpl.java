@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.service.impl;
+package com.um.springbootprojstructure.service.impl;
 
 import com.um.springbootprojstructure.entity.IdentityDocument;
 import com.um.springbootprojstructure.entity.User;
@@ -48,7 +48,19 @@ public class IdentityDocumentServiceImpl implements IdentityDocumentService {
             throw new IllegalArgumentException("File too large. Max bytes=" + maxBytes);
         }
 
-        String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+        String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "document";
+        String filename = java.nio.file.Paths.get(originalName).getFileName().toString();
+
+        String contentType = null;
+        try {
+            contentType = java.nio.file.Files.probeContentType(java.nio.file.Paths.get(filename));
+        } catch (IOException e) {
+            // ignore
+        }
+        if (contentType == null) {
+            contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+        }
+
         if (!allowedContentTypes.contains(contentType)) {
             throw new IllegalArgumentException("Unsupported content type: " + contentType);
         }
@@ -63,9 +75,7 @@ public class IdentityDocumentServiceImpl implements IdentityDocumentService {
             throw new IllegalArgumentException("Failed to read uploaded file");
         }
 
-        String filename = (file.getOriginalFilename() == null || file.getOriginalFilename().isBlank())
-                ? "identity-document"
-                : file.getOriginalFilename();
+        // filename is already sanitized above
 
         IdentityDocument doc = identityDocumentRepository.findByUser(user)
                 .orElse(null);

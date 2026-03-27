@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.service.impl;
+package com.um.springbootprojstructure.service.impl;
 
 import com.um.springbootprojstructure.dto.SmsSendRequest;
 import com.um.springbootprojstructure.service.NotificationGatewayService;
@@ -25,7 +25,10 @@ public class NotificationGatewayServiceImpl implements NotificationGatewayServic
     @Override
     public void sendSms(String toPhoneNumber, String message) {
         restClient.post()
-                .uri(baseUrl + smsPath)
+                .uri(uriBuilder -> uriBuilder
+                        .path(baseUrl)
+                        .path(smsPath)
+                        .build())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new SmsSendRequest(toPhoneNumber, message))
                 .retrieve()

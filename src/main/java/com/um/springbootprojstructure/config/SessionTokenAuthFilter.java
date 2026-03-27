@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.config;
+package com.um.springbootprojstructure.config;
 
 import com.um.springbootprojstructure.entity.SessionToken;
 import com.um.springbootprojstructure.entity.User;
@@ -36,7 +36,7 @@ public class SessionTokenAuthFilter extends OncePerRequestFilter {
                 User user = session.getUser();
 
                 // Authority style: ROLE_USER / ROLE_ADMIN
-                String roleName = "ROLE_" + user.getRole().name();
+                String roleName = session.isMfaVerified() ? "ROLE_" + user.getRole().name() : "ROLE_PRE_AUTH";
                 var auth = new UsernamePasswordAuthenticationToken(
                         user.getId(), // principal
                         null,

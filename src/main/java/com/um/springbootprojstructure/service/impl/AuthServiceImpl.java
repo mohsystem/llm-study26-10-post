@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.service.impl;
+package com.um.springbootprojstructure.service.impl;
 
 import com.um.springbootprojstructure.dto.ChangePasswordRequest;
 import com.um.springbootprojstructure.dto.LoginRequest;
@@ -58,7 +58,13 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByUsername(identifier)
                 .or(() -> userRepository.findByEmail(identifier))
-                .orElseThrow(() -> new UnauthorizedException("INVALID_CREDENTIALS", "Invalid credentials"));
+                .orElse(null);
+
+        if (user == null) {
+            // Mitigate timing attack
+            passwordEncoder.matches(request.getPassword(), passwordEncoder.encode("dummy"));
+            throw new UnauthorizedException("INVALID_CREDENTIALS", "Invalid credentials");
+        }
 
         if (user.getStatus() != AccountStatus.ACTIVE) {
             throw new UnauthorizedException("USER_INACTIVE", "User is inactive");

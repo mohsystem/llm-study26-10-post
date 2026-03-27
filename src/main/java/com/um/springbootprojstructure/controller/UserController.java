@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.controller;
+package com.um.springbootprojstructure.controller;
 
 import com.um.springbootprojstructure.dto.StatusResponse;
 import com.um.springbootprojstructure.dto.UserResponse;
@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,15 +39,24 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Role role,
-            @RequestParam(required = false) AccountStatus status
+            @RequestParam(required = false) AccountStatus status,
+            Authentication authentication
     ) {
+        if (authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            throw new AccessDeniedException("FORBIDDEN");
+        }
         promptLogger.info("GET /api/users page={}, size={}, role={}, status={}", page, size, role, status);
         Page<User> users = userService.listUsers(page, size, Optional.ofNullable(role), Optional.ofNullable(status));
         return users.map(UserMapper::toResponse);
     }
 
     @GetMapping("/{publicRef}/document")
-    public ResponseEntity<byte[]> getIdentityDocument(@PathVariable String publicRef) {
+    public ResponseEntity<byte[]> getIdentityDocument(@PathVariable String publicRef, Authentication authentication) {
+        User authenticatedUser = (User) authentication.getDetails();
+        boolean isAdmin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !authenticatedUser.getPublicRef().equals(publicRef)) {
+            throw new AccessDeniedException("FORBIDDEN");
+        }
         promptLogger.info("GET /api/users/{}/document", publicRef);
 
         IdentityDocument doc = identityDocumentService.getByUserPublicRef(publicRef);
@@ -61,8 +72,14 @@ public class UserController {
     @PutMapping(value = "/{publicRef}/document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StatusResponse> uploadOrReplaceIdentityDocument(
             @PathVariable String publicRef,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
     ) {
+        User authenticatedUser = (User) authentication.getDetails();
+        boolean isAdmin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !authenticatedUser.getPublicRef().equals(publicRef)) {
+            throw new AccessDeniedException("FORBIDDEN");
+        }
         promptLogger.info("PUT /api/users/{}/document fileName={}, size={}, contentType={}",
                 publicRef,
                 file != null ? file.getOriginalFilename() : null,

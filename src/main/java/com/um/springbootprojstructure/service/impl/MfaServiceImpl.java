@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.service.impl;
+package com.um.springbootprojstructure.service.impl;
 
 import com.um.springbootprojstructure.entity.MfaOtp;
 import com.um.springbootprojstructure.entity.SessionToken;
@@ -108,7 +108,7 @@ public class MfaServiceImpl implements MfaService {
         int safeDigits = Math.max(4, Math.min(digits, 10));
         int bound = (int) Math.pow(10, safeDigits);
         int min = (int) Math.pow(10, safeDigits - 1);
-        int value = new Random().nextInt(bound - min) + min;
+        int value = new java.security.SecureRandom().nextInt(bound - min) + min;
         return String.valueOf(value);
     }
 }

@@ -1,4 +1,4 @@
-﻿package com.um.springbootprojstructure.controller;
+package com.um.springbootprojstructure.controller;
 
 import com.um.springbootprojstructure.dto.ApiKeyIssueRequest;
 import com.um.springbootprojstructure.dto.ApiKeyIssueResponse;
@@ -63,7 +63,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        promptLogger.info("Register request: username={}, email={}", request.getUsername(), request.getEmail());
+        String safeUsername = request.getUsername().replaceAll("[\r\n]", "_");
+        String safeEmail = request.getEmail().replaceAll("[\r\n]", "_");
+        promptLogger.info("Register request: username={}, email={}", safeUsername, safeEmail);
         User created = authService.register(request);
         RegisterResponse response = new RegisterResponse(created.getId(), "ACCOUNT_CREATED");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
